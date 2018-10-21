@@ -83,8 +83,6 @@ def executeSubscription():
 	#if return_code:
 	#	raise subprocess.CalledProcessError(return_code,cmd)
 
-
-
 def fireProtocol():
 	#Smoke was detected. Safely shutdown and send warning.
 	hvac('off')
@@ -194,14 +192,14 @@ def runLogic():
 			if (data['current_temp']>data['ideal_temp'] and data['status']=='off'):
 				hvac('on')	#turn on air conditioner
 				update('status','on')
-			elif data['current_temp']<=data['ideal_temp'] and data['status']=='on':
+			elif data['current_temp']<=data['ideal_temp']-data['temp_swing'] and data['status']=='on':
 				hvac('off')	#turn off airconditioner
 				update('status','off')
 		elif data['preference']=='heat':
 			if data['current_temp']<data['ideal_temp'] and data['status']=='off':
 				hvac('on')	#turn on heater
 				update('status','on')
-			elif data['current_temp']>=data['ideal_temp'] and data['status']=='on':
+			elif data['current_temp']>=data['ideal_temp']+data['temp_swing'] and data['status']=='on':
 				hvac('off')	#turn off heater
 				update('status','off')
 	
@@ -237,14 +235,14 @@ def runLogic():
 			if data['current_temp']>data['ideal_temp'] and data['status']=='off':
 				hvac('on')	#turn on air conditioner
 				pub('status','on')
-			elif data['current_temp']<=data['ideal_temp'] and data['status']=='on':
+			elif data['current_temp']<=data['ideal_temp']-data['temp_swing'] and data['status']=='on':
 				hvac('off')	#turn off airconditioner
 				pub('status','off')
 		elif data['preference']=='heat':
 			if data['current_temp']<data['ideal_temp'] and data['status']=='off':
 				hvac('on')	#turn on heater
 				pub('status','on')
-			elif data['current_temp']>=data['ideal_temp'] and data['status']=='on':
+			elif data['current_temp']>=data['ideal_temp']+data['temp_swing'] and data['status']=='on':
 				hvac('off')	#turn off heater
 				pub('status','off')
 		else:
@@ -327,6 +325,7 @@ thermostat/#        For all thermostat messages
 						Used for connection checking
 	preference      Specificies mode, "heat" or "cool"
 	status          Specifies if actively running, "on" or "off"
+	temp_swing		Tolerable deviation from ideal temperature (degrees F)
 
 
 --- PAYLOAD FORMAT ---
@@ -373,7 +372,8 @@ defaults={ #These data defaults are only used if no backup file exists
 		'lax_times':'2040,2345',
 		'lax_temp':80,
 		'messages':'Hard-coded default settings used.',
-		'smoke_detect':'clear'
+		'smoke_detect':'clear',
+		'temp_swing':1
 		}
 
 ### Main Execution ###
@@ -412,7 +412,7 @@ if __name__=='__main__':
 			mmsg=str2int(' '.join(modline.split()[1:]))
 			update(mtopic,mmsg)	#Save info from payload
 				
-			essentials=['current_temp','ideal_temp','preference','status','lax_ability','lax_status','lax_days','lax_times','lax_temp','reported_time']
+			essentials=['current_temp','ideal_temp','preference','status','lax_ability','lax_status','lax_days','lax_times','lax_temp','reported_time','temp_swing']
 			if all(key in data for key in essentials): #Check required data is ready
 				#print('-'*30)
 				runLogic()
